@@ -91,7 +91,6 @@
         function App() {
             const [lines, setLines] = useState([]);
             const [flickerLines, setFlickerLines] = useState(Array(6).fill(0));
-            const [isFirstCast, setIsFirstCast] = useState(true);
             const [isCasting, setIsCasting] = useState(false);
             const [hexagramResult, setHexagramResult] = useState(null);
 
@@ -101,13 +100,7 @@
                 setLines([]);
                 setHexagramResult(null);
 
-                const currentIsFirst = isFirstCast;
-
-                let targetLines = currentIsFirst 
-                    ? [0, 0, 0, 0, 1, 0] 
-                    : Array.from({ length: 6 }, () => (Math.random() > 0.5 ? 1 : 0));
-                
-                if (currentIsFirst) setIsFirstCast(false);
+                let targetLines = Array.from({ length: 6 }, () => (Math.random() > 0.5 ? 1 : 0));
 
                 const flickerInterval = setInterval(() => {
                     setFlickerLines(Array.from({ length: 6 }, () => (Math.random() > 0.5 ? 1 : 0)));
@@ -127,18 +120,14 @@
                                     meaning: "Hệ thống đang cập nhật ý nghĩa cho quẻ này." 
                                 };
 
-                                const finalResult = currentIsFirst 
-                                    ? { ...baseResult, meaning: "Bé này có lộc ăn uống nè" }
-                                    : baseResult;
-
-                                setHexagramResult(finalResult);
+                                setHexagramResult(baseResult);
                                 setIsCasting(false);
                             }, 400);
                         }
                         return newLines;
                     });
                 }
-            }, [isCasting, isFirstCast]);
+            }, [isCasting]);
 
             const renderLine = (value, index, isSettled) => {
                 const isYang = value === 1;
@@ -175,7 +164,7 @@
                                 </h1>
                             </div>
                             <p className="text-[#8c6b4a] mt-1 italic text-lg tracking-wider font-medium">
-                                "Tâm thành tất linh"
+                                "Tâm thành tắc linh"
                             </p>
                             <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#8c6b4a]/50 to-transparent mx-auto mt-4"></div>
                         </div>
