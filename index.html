@@ -1,0 +1,277 @@
+import React, { useState, useCallback } from 'react';
+
+// Cơ sở dữ liệu 64 quẻ Kinh Dịch
+const hexagrams = {
+  "111111": { name: "Bát Thuần Càn", meaning: "Trời, cứng mạnh, sáng sủa, hanh thông, vạn vật có khởi đầu." },
+  "000000": { name: "Bát Thuần Khôn", meaning: "Đất, mềm mỏng, nhu thuận, cưu mang, nuôi dưỡng vạn vật." },
+  "100010": { name: "Thủy Lôi Truân", meaning: "Gian nan, yếu ớt lúc ban đầu, cần sự giúp đỡ." },
+  "010001": { name: "Sơn Thủy Mông", meaning: "Mờ mịt, thiếu kinh nghiệm, cần được chỉ dạy, khai sáng." },
+  "111010": { name: "Thủy Thiên Nhu", meaning: "Chờ đợi, kiên nhẫn, nhẫn nại sẽ có kết quả tốt." },
+  "010111": { name: "Thiên Thủy Tụng", meaning: "Kiện tụng, tranh chấp, bất hòa, cần cẩn trọng lời ăn tiếng nói." },
+  "010000": { name: "Địa Thủy Sư", meaning: "Quân đội, đám đông, cần người lãnh đạo tài đức." },
+  "000010": { name: "Thủy Địa Tỷ", meaning: "Gần gũi, thân thiết, kết bạn, chọn lọc, tương trợ lẫn nhau." },
+  "111011": { name: "Phong Thiên Tiểu Súc", meaning: "Tích lũy nhỏ, bị kìm hãm tạm thời, cần tích tiểu thành đại." },
+  "110111": { name: "Thiên Trạch Lý", meaning: "Lễ nghi, phép tắc, cẩn thận từng bước như dẫm lên đuôi hổ." },
+  "111000": { name: "Địa Thiên Thái", meaning: "Hanh thông, yên bình, âm dương hòa hợp, thời kỳ tốt đẹp." },
+  "000111": { name: "Thiên Địa Bĩ", meaning: "Bế tắc, tiểu nhân đắc chí, người quân tử nên ẩn nhẫn." },
+  "101111": { name: "Thiên Hỏa Đồng Nhân", meaning: "Cùng chí hướng, đoàn kết, hợp tác vì mục tiêu chung." },
+  "111101": { name: "Hỏa Thiên Đại Hữu", meaning: "Có nhiều, sung túc, thời kỳ vượng phát, thịnh vượng." },
+  "001000": { name: "Địa Sơn Khiêm", meaning: "Khiêm tốn, nhún nhường, cái gì đầy thì vơi, khiêm nhường thì được lợi." },
+  "000100": { name: "Lôi Địa Dự", meaning: "Vui vẻ, thuận lợi, có sự chuẩn bị trước thì sẽ tốt lành." },
+  "100110": { name: "Trạch Lôi Tùy", meaning: "Thuận theo, tùy thời, đi theo cái đúng, thay đổi linh hoạt." },
+  "011001": { name: "Sơn Phong Cổ", meaning: "Đổ nát, thối nát, cần phải chấn chỉnh, sửa chữa lại." },
+  "110000": { name: "Địa Trạch Lâm", meaning: "Bao quản, cai trị, người lớn đến với kẻ nhỏ, thời kỳ tiến bộ." },
+  "000011": { name: "Phong Địa Quan", meaning: "Quan sát, xem xét, làm gương cho người khác noi theo." },
+  "100101": { name: "Hỏa Lôi Phệ Hạp", meaning: "Cắn hợp, trừng phạt, dùng pháp luật để giải quyết sự cản trở." },
+  "101001": { name: "Sơn Hỏa Bí", meaning: "Trang sức, vẻ bề ngoài, làm đẹp nhưng không nên lấn át bản chất." },
+  "000001": { name: "Sơn Địa Bác", meaning: "Bóc lột, suy trĩ, tiểu nhân lấn át quân tử." },
+  "100000": { name: "Địa Lôi Phục", meaning: "Phục hồi, quay trở lại, bắt đầu một chu kỳ mới tốt đẹp hơn." },
+  "100111": { name: "Thiên Lôi Vô Vọng", meaning: "Chân thực, không viển vông, hành động tự nhiên, thuận theo lẽ trời." },
+  "111001": { name: "Sơn Thiên Đại Súc", meaning: "Tích lũy lớn, chứa đựng nhiều tài đức, cần sự kiên nhẫn." },
+  "100001": { name: "Sơn Lôi Di", meaning: "Nuôi dưỡng, bồi bổ, cẩn thận lời nói và việc ăn uống." },
+  "011110": { name: "Trạch Phong Đại Quá", meaning: "Vượt quá, gánh vác việc lớn, cái cột bị cong, cần cẩn trọng." },
+  "010010": { name: "Bát Thuần Khảm", meaning: "Gian hiểm, trắc trở, hiểm nguy chồng chất, cần giữ vững tâm trí." },
+  "101101": { name: "Bát Thuần Ly", meaning: "Sáng sủa, bám níu, dựa vào nhau như lửa bám vào củi." },
+  "011100": { name: "Trạch Sơn Hàm", meaning: "Cảm ứng, giao cảm, nam nữ thu hút nhau, sự rung động." },
+  "001110": { name: "Lôi Phong Hằng", meaning: "Lâu dài, kiên trì, giữ vững đạo lý thường tình." },
+  "001111": { name: "Thiên Sơn Độn", meaning: "Rút lui, ẩn tránh, tiểu nhân đang lên, quân tử nên lùi bước." },
+  "111100": { name: "Lôi Thiên Đại Tráng", meaning: "Lớn mạnh, dương khí hưng thịnh, nhưng không nên cậy mạnh." },
+  "000101": { name: "Hỏa Địa Tấn", meaning: "Tiến lên, sáng sủa, như mặt trời mọc trên mặt đất." },
+  "101000": { name: "Địa Hỏa Minh Di", meaning: "Tối tăm, tổn thương, mặt trời bị lặn xuống đất, cần che giấu tài năng." },
+  "101011": { name: "Phong Hỏa Gia Nhân", meaning: "Người nhà, trật tự gia đình, tề gia thì mới trị quốc được." },
+  "110101": { name: "Hỏa Trạch Khuê", meaning: "Chống đối, trái ngược, mâu thuẫn nhưng vẫn có thể dùng được việc nhỏ." },
+  "001010": { name: "Thủy Sơn Kiển", meaning: "Gian nan, què quặt, hiểm trở phía trước, nên chờ đợi thời cơ." },
+  "010100": { name: "Lôi Thủy Giải", meaning: "Giải thoát, xua tan hoạn nạn, mưa tuyết tan, cần hành động nhanh." },
+  "110001": { name: "Sơn Trạch Tổn", meaning: "Bớt đi, thiệt hại, chịu thiệt trước mắt để được lợi lâu dài." },
+  "100011": { name: "Phong Lôi Ích", meaning: "Tăng thêm, lợi ích, thời kỳ phát triển thuận lợi." },
+  "111110": { name: "Trạch Thiên Quải", meaning: "Quyết định, dứt khoát, diệt trừ kẻ ác, cần cứng rắn nhưng không nóng vội." },
+  "011111": { name: "Thiên Phong Cấu", meaning: "Gặp gỡ, giao hợp, một âm gặp năm dương, cẩn thận nữ sắc hoặc kẻ tiểu nhân." },
+  "011000": { name: "Địa Phong Thăng", meaning: "Lên cao, tiến bước, như cây đâm chồi từ dưới đất lên." },
+  "000110": { name: "Trạch Địa Tụy", meaning: "Tụ họp, gom góp, đông đúc, cần có người lãnh đạo tốt." },
+  "010110": { name: "Trạch Thủy Khốn", meaning: "Cùng khốn, nguy ngập, cây khô hết nước, vạn sự bế tắc." },
+  "011010": { name: "Thủy Phong Tỉnh", meaning: "Cái giếng, không di dời, nuôi dưỡng mọi người vô tư." },
+  "101110": { name: "Trạch Hỏa Cách", meaning: "Cải cách, thay đổi, bỏ cái cũ lập cái mới." },
+  "011101": { name: "Hỏa Phong Đỉnh", meaning: "Cái vạc, ổn định, vững chắc, thời kỳ củng cố và phát triển." },
+  "100100": { name: "Bát Thuần Chấn", meaning: "Sấm sét, chấn động, làm cho vạn vật kinh sợ để tỉnh thức." },
+  "001001": { name: "Bát Thuần Cấn", meaning: "Ngừng nghỉ, núi non đè nén, biết dừng đúng lúc." },
+  "001011": { name: "Phong Sơn Tiệm", meaning: "Tiến lên từ từ, tuần tự tiệm tiến, không được nôn nóng." },
+  "110100": { name: "Lôi Trạch Quy Muội", meaning: "Gái lấy chồng, bất chính, tiến lên mù quáng sẽ gặp hung hiểm." },
+  "101100": { name: "Lôi Hỏa Phong", meaning: "Thịnh vượng, dồi dào, to lớn, nhưng thịnh cực tất suy." },
+  "001101": { name: "Hỏa Sơn Lữ", meaning: "Đi xa, lữ khách, tạm bợ, cần giữ thái độ nhu thuận." },
+  "011011": { name: "Bát Thuần Tốn", meaning: "Thuận theo, nhập vào, gió thổi len lỏi khắp nơi, mềm mỏng." },
+  "110110": { name: "Bát Thuần Đoài", meaning: "Vui vẻ, hòa duyệt, nói năng khéo léo làm đẹp lòng người." },
+  "010011": { name: "Phong Thủy Hoán", meaning: "Giải tán, phân tán, nước đá tan chảy, xua tan mây mù hoạn nạn." },
+  "110010": { name: "Thủy Trạch Tiết", meaning: "Tiết chế, chừng mực, giữ kỷ luật không được thái quá." },
+  "110011": { name: "Phong Trạch Trung Phu", meaning: "Tín thực, chân thành, sự tin tưởng từ trong tâm." },
+  "001100": { name: "Lôi Sơn Tiểu Quá", meaning: "Hơi quá, vượt mức nhỏ, cẩn trọng trong từng việc nhỏ." },
+  "101010": { name: "Thủy Hỏa Ký Tế", meaning: "Đã xong, thành công, mọi việc đã hoàn tất nhưng cẩn thận sự lơi lỏng." },
+  "010101": { name: "Hỏa Thủy Vị Tế", meaning: "Chưa xong, còn dang dở, vẫn còn việc phải làm, hi vọng ở tương lai." }
+};
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export default function App() {
+  const [lines, setLines] = useState([]); // Hào đã chốt
+  const [flickerLines, setFlickerLines] = useState(Array(6).fill(0)); // Cả 6 hào nhấp nháy
+  const [isFirstCast, setIsFirstCast] = useState(true);
+  const [isCasting, setIsCasting] = useState(false);
+  const [hexagramResult, setHexagramResult] = useState(null);
+
+  const castHexagram = useCallback(async () => {
+    if (isCasting) return;
+    setIsCasting(true);
+    setLines([]);
+    setHexagramResult(null);
+
+    const currentIsFirst = isFirstCast;
+
+    // Luôn ra Thủy Địa Tỷ (000010) ở lần gieo đầu tiên
+    let targetLines = currentIsFirst 
+      ? [0, 0, 0, 0, 1, 0] 
+      : Array.from({ length: 6 }, () => (Math.random() > 0.5 ? 1 : 0));
+    
+    if (currentIsFirst) setIsFirstCast(false);
+
+    // Bật hiệu ứng random liên tục cho cả 6 hào
+    const flickerInterval = setInterval(() => {
+      setFlickerLines(Array.from({ length: 6 }, () => (Math.random() > 0.5 ? 1 : 0)));
+    }, 50); // Tốc độ xáo trộn 50ms (rất nhanh)
+
+    // Chốt từng hào một từ dưới lên trên
+    for (let i = 0; i < 6; i++) {
+      // Thời gian chờ tăng dần tạo sự hồi hộp (từ 500ms đến ~1250ms)
+      await delay(500 + i * 150);
+
+      setLines(prev => {
+        const newLines = [...prev, targetLines[i]];
+        // Khi chốt đủ 6 hào thì hiển thị kết quả
+        if (newLines.length === 6) {
+          clearInterval(flickerInterval);
+          const binaryString = newLines.join('');
+          setTimeout(() => {
+            const baseResult = hexagrams[binaryString] || { 
+              name: "Quẻ không xác định", 
+              meaning: "Hệ thống đang cập nhật ý nghĩa cho quẻ này." 
+            };
+
+            // Tùy chỉnh ý nghĩa cho lần gieo đầu tiên
+            const finalResult = currentIsFirst 
+              ? { ...baseResult, meaning: "Bé này có lộc ăn uống nè" }
+              : baseResult;
+
+            setHexagramResult(finalResult);
+            setIsCasting(false);
+          }, 400);
+        }
+        return newLines;
+      });
+    }
+  }, [isCasting, isFirstCast]);
+
+  const renderLine = (value, index, isSettled) => {
+    const isYang = value === 1;
+    // Style cho hào đã chốt vs hào đang xáo trộn
+    const baseStyle = "h-full rounded-[2px] shadow-[0_2px_10px_rgba(0,0,0,0.3)] transition-all duration-150";
+    const bgClass = isSettled 
+      ? "bg-gradient-to-b from-[#1c1917] to-[#292524] border border-[#3f3f46]/30" // Màu mực đen nhánh cho hào đã chốt
+      : "bg-gradient-to-b from-[#b91c1c] to-[#7f1d1d] opacity-80 scale-y-90 shadow-[0_0_15px_rgba(185,28,28,0.5)]"; // Màu đỏ rực nhấp nháy cho hào đang gieo
+
+    return (
+      <div 
+        key={`line-${index}-${isSettled ? 'settled' : 'flicker'}`} 
+        className={`flex w-full h-10 sm:h-12 items-center justify-center mb-4 ${isSettled ? 'animate-[fadeIn_0.3s_ease-out]' : ''}`}
+      >
+        {isYang ? (
+          // Hào Dương: Nét liền
+          <div className={`w-full ${baseStyle} ${bgClass}`}></div>
+        ) : (
+          // Hào Âm: Nét đứt (2 đoạn)
+          <div className="flex w-full h-full justify-between items-center">
+            <div className={`w-[44%] ${baseStyle} ${bgClass}`}></div>
+            <div className={`w-[44%] ${baseStyle} ${bgClass}`}></div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#f4ebd8] to-[#e6d5b8] text-[#2c1e16] font-serif p-4 sm:p-8 flex flex-col items-center overflow-x-hidden selection:bg-amber-900/20">
+      
+      {/* Background Hoa văn ẩn */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/rice-paper.png')] mix-blend-multiply"></div>
+      
+      <div className="max-w-md w-full relative z-10">
+        {/* Header */}
+        <div className="text-center mb-10 mt-4">
+          <div className="inline-block relative">
+            <div className="absolute -inset-4 bg-red-900/5 blur-xl rounded-full"></div>
+            <h1 className="relative text-4xl sm:text-5xl font-bold mb-3 tracking-widest text-[#5e201b] drop-shadow-sm">
+              KINH DỊCH
+            </h1>
+          </div>
+          <p className="text-[#8c6b4a] mt-1 italic text-lg tracking-wider font-medium">
+            "Tâm thành tắc linh"
+          </p>
+          <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#8c6b4a]/50 to-transparent mx-auto mt-4"></div>
+        </div>
+
+        {/* Khu vực hiển thị quẻ */}
+        <div className="relative bg-[#faf7f0]/80 backdrop-blur-sm p-8 rounded-2xl shadow-[inset_0_0_40px_rgba(200,170,130,0.1),0_15px_40px_-10px_rgba(0,0,0,0.1)] border border-[#d6c2a5] min-h-[420px] flex flex-col items-center justify-center overflow-hidden">
+          
+          {/* Bát quái mờ làm nền */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
+            <svg viewBox="0 0 100 100" className="w-64 h-64 animate-[spin_120s_linear_infinite]">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5,5"/>
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <path d="M50 20 A 15 15 0 0 1 50 50 A 15 15 0 0 0 50 80 A 30 30 0 0 1 50 20" fill="currentColor"/>
+              <circle cx="50" cy="35" r="4" fill="#faf7f0"/>
+              <circle cx="50" cy="65" r="4" fill="currentColor"/>
+            </svg>
+          </div>
+
+          <div className="w-4/5 max-w-[220px] flex flex-col-reverse justify-end min-h-[340px] relative z-10">
+            {/* Render 6 Hào (Kết hợp hào đã chốt và hào đang random) */}
+            {Array.from({ length: 6 }).map((_, index) => {
+              if (!isCasting && index >= lines.length) return null; // Ẩn khi chưa gieo
+
+              const isSettled = index < lines.length;
+              const value = isSettled ? lines[index] : flickerLines[index];
+
+              return renderLine(value, index, isSettled);
+            })}
+            
+            {/* Vòng tròn chờ ban đầu */}
+            {lines.length === 0 && !isCasting && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-[#8c6b4a]/60">
+                <div className="w-24 h-24 border border-[#8c6b4a]/30 rounded-full flex items-center justify-center mb-4 relative">
+                  <div className="absolute inset-0 border border-[#5e201b]/20 rounded-full animate-ping opacity-20"></div>
+                  <span className="text-3xl">☯</span>
+                </div>
+                <span className="text-sm tracking-widest uppercase opacity-70 font-sans">Chuẩn bị gieo quẻ</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Nút Gieo Quẻ */}
+        <div className="mt-10 flex justify-center relative z-10">
+          <button
+            onClick={castHexagram}
+            disabled={isCasting}
+            className={`
+              relative group overflow-hidden px-10 py-4 rounded-full font-bold text-lg tracking-[0.2em] transition-all duration-500
+              ${isCasting 
+                ? 'bg-[#d6c2a5] text-[#8c6b4a] cursor-wait shadow-inner' 
+                : 'bg-gradient-to-b from-[#7a2822] to-[#4a1713] text-[#f4ebd8] shadow-[0_8px_25px_rgba(94,32,27,0.4)] hover:shadow-[0_12px_35px_rgba(94,32,27,0.6)] hover:-translate-y-1 active:translate-y-0 active:shadow-md'
+              }
+            `}
+          >
+            {/* Hiệu ứng bóng lướt qua nút */}
+            {!isCasting && <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"></div>}
+            
+            <span className="relative z-10">{isCasting ? 'ĐANG LẬP QUẺ...' : 'GIEO QUẺ'}</span>
+          </button>
+        </div>
+
+        {/* Khu vực Kết Quả */}
+        <div className={`mt-10 transition-all duration-1000 ease-out transform ${hexagramResult ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
+          {hexagramResult && (
+            <div className="relative bg-gradient-to-b from-[#5e201b] to-[#3b120f] p-[2px] rounded-2xl shadow-xl">
+              <div className="bg-[#faf7f0] p-8 rounded-[14px] text-center relative overflow-hidden">
+                {/* Hoa văn góc */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#8c6b4a]/40 m-3"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#8c6b4a]/40 m-3"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#8c6b4a]/40 m-3"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#8c6b4a]/40 m-3"></div>
+
+                <h2 className="text-3xl font-bold text-[#5e201b] mb-4 uppercase tracking-[0.15em] drop-shadow-sm">
+                  {hexagramResult.name}
+                </h2>
+                <div className="flex items-center justify-center gap-3 mb-5">
+                  <div className="w-16 h-px bg-[#8c6b4a]/40"></div>
+                  <span className="text-[#8c6b4a] text-xl">✧</span>
+                  <div className="w-16 h-px bg-[#8c6b4a]/40"></div>
+                </div>
+                <p className="text-[#3f3f46] leading-relaxed text-lg font-sans font-medium px-4">
+                  {hexagramResult.meaning}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* CSS Animations */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes shimmer {
+          100% { transform: translateX(200%); }
+        }
+      `}} />
+    </div>
+  );
+}
